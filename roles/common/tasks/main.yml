@@ -1,0 +1,28 @@
+---
+- name: Create test file
+  copy:
+    content: "Hallo Walid, dit is een Ansible test op {{ ansible_hostname }}."
+    dest: /tmp/ansible_test.txt
+
+- name: Include handler trigger
+  debug:
+    msg: "Handler wordt straks aangeroepen"
+  notify: restart something
+  changed_when: true
+
+- name: Maak testbestand aan
+  become: true
+  copy:
+    content: "Hallo Walid, test op {{ ansible_hostname }}"
+    dest: /etc/motd
+  notify: restart cron
+
+# roles/common/tasks/main.yml
+- name: Copy customized motd file
+  template:
+    src: motd.j2
+    dest: /etc/motd
+    owner: root
+    group: root
+    mode: '0644'
+  become: true

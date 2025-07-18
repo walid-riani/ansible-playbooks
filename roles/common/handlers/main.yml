@@ -1,0 +1,9 @@
+---
+- name: restart something
+  debug:
+    msg: "Handler 'restart something' is triggered!"
+- name: restart cron
+  systemd:
+    name: cron
+    state: restarted
+    daemon_reload: yes

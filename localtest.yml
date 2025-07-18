@@ -1,0 +1,13 @@
+---
+- name: Local Ansible test
+  hosts: local
+  connection: local
+  gather_facts: yes
+
+  roles:
+    - common
+
+  tasks:
+    - name: Check ansible_user variable
+      debug:
+        var: ansible_user

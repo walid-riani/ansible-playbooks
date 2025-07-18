@@ -1,0 +1,9 @@
+---
+- hosts: local
+  connection: local
+  gather_facts: yes
+
+  tasks:
+    - name: Toon alleen ansible_user fact
+      debug:
+        var: ansible_user
