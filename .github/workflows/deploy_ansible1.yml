@@ -3,7 +3,11 @@ name: Ansible Deploy to Localhost
 on:
   push:
     branches:
-      - main # Pas aan als je branch anders heet
+      - main
+    paths:
+      - "playbooks/**"
+      - "inventory/**"
+      - ".github/workflows/deploy_ansible1.yml"
 
 jobs:
   deploy:
