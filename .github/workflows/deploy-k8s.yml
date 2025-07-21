@@ -24,7 +24,7 @@ jobs:
   deploy-prod:
     name: Deploy to Prod
     runs-on: self-hosted
-    needs: deploy-to-dev # Ensure dev deployment is complete before proceeding to prod
+    needs: deploy-dev # Ensure dev deployment is complete before proceeding to prod
     environment:
       name: production # GitHub maakt hier een handmatige goedkeuring voor aan
       url: http://192.168.2.9:31564
@@ -37,3 +37,4 @@ jobs:
           export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
           kubectl apply -f k8s/prod/nginx-deployment.yml -n prod
           kubectl apply -f k8s/prod/nginx-service.yml -n prod
+# Trigger update
