@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app: nginx
+        tier: frontend # < voeg deze extra label toe voor test
     spec:
       containers:
         - name: nginx
