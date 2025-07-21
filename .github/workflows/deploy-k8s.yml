@@ -1,0 +1,20 @@
+name: Deploy to K3s (dev)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "k8s/dev/**"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to K3s (dev namespace)
+        run: |
+          kubectl apply -f k8s/dev/nginx-deployment.yml -n dev
+          kubectl apply -f k8s/dev/nginx-service.yml -n dev
