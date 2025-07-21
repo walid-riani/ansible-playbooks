@@ -35,13 +35,16 @@ jobs:
   deploy-prod:
     name: Deploy to Prod
     runs-on: self-hosted
-    needs: wait-for-approval
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: deploy-to-dev # wacht tot dev-deploy klaar is
+    environment:
+      name: production # activeert handmatige goedkeuring via GitHub UI
+      url: http://prod.example.com
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Deploy to K3s (prod namespace)
         run: |
+          export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
           kubectl apply -f k8s/prod/nginx-deployment.yml -n prod
           kubectl apply -f k8s/prod/nginx-service.yml -n prod
