@@ -24,10 +24,10 @@ jobs:
   deploy-prod:
     name: Deploy to Prod
     runs-on: self-hosted
-    needs: deploy-dev # corrected here
+    needs: deploy-to-dev # Ensure dev deployment is complete before proceeding to prod
     environment:
       name: production # GitHub maakt hier een handmatige goedkeuring voor aan
-      url: http://prod.example.com
+      url: http://192.168.2.9:31564
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
