@@ -1,0 +1,11 @@
+# docker/prod/docker-compose.prod.yml
+version: '3.8'
+
+services:
+  web:
+    image: nginx:latest
+    container_name: web-prod
+    ports:
+      - "80:80"
+    environment:
+      - ENVIRONMENT=production

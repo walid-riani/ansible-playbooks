@@ -40,3 +40,5 @@ Zorg dat je in de hoofdmap van het project staat (`ansible-playbooks/`) en gebru
 
 ```bash
 ansible-playbook -i inventory/hosts.ini playbooks/localtest.yml
+
+#testen

@@ -1,0 +1,11 @@
+# docker/dev/docker-compose.dev.yml
+version: '3.8'
+
+services:
+  web:
+    image: nginx:latest
+    container_name: web-dev
+    ports:
+      - "8080:80"
+    environment:
+      - ENVIRONMENT=development
