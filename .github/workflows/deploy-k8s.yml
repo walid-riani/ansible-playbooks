@@ -21,23 +21,12 @@ jobs:
           kubectl apply -f k8s/dev/nginx-deployment.yml -n dev
           kubectl apply -f k8s/dev/nginx-service.yml -n dev
 
-  wait-for-approval:
-    name: Wait for manual approval
-    runs-on: ubuntu-latest
-    needs: deploy-dev
-    steps:
-      - name: Wait for approval
-        uses: hmarr/auto-approve-action@v3
-        if: github.event_name == 'workflow_dispatch'
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
   deploy-prod:
     name: Deploy to Prod
     runs-on: self-hosted
-    needs: deploy-to-dev # wacht tot dev-deploy klaar is
+    needs: deploy-dev # corrected here
     environment:
-      name: production # activeert handmatige goedkeuring via GitHub UI
+      name: production # GitHub maakt hier een handmatige goedkeuring voor aan
       url: http://prod.example.com
     steps:
       - name: Checkout repository
