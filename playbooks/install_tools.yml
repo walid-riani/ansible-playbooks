@@ -1,0 +1,165 @@
+---
+- name: Installeer tools op localhost (alleen als ze ontbreken)
+  hosts: localhost
+  become: yes
+  gather_facts: yes
+
+  vars:
+    apt_tools:
+      - git
+      - curl
+    check_commands:
+      - kubectl
+      - k3s
+      - helm
+    argo_cd_install_script: https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    kubeconfig_path: /home/walid/.kube/config  # Pas aan als nodig
+
+  tasks:
+
+    - name: Installeer standaard tools via apt (alleen als ze ontbreken)
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop: "{{ apt_tools }}"
+
+    - name: Controleer of {{ item }} beschikbaar is in PATH
+      command: which {{ item }}
+      register: command_check
+      failed_when: false
+      changed_when: false
+      loop: "{{ check_commands }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Toon welke tools al geïnstalleerd zijn
+      debug:
+        msg: "{{ item.item }} is {{ 'aanwezig' if item.rc == 0 else 'AFWEZIG' }}"
+      loop: "{{ command_check.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Controleer of helm geïnstalleerd is
+      command: which helm
+      register: helm_check
+      failed_when: false
+      changed_when: false
+
+    - name: Installeer Helm (indien niet aanwezig)
+      when: helm_check.rc != 0
+      ansible.builtin.shell: |
+        curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        executable: /bin/bash
+      register: helm_install
+
+    - name: Installeer Argo CD als het nog niet aanwezig is
+      command: which argocd
+      register: argo_check
+      failed_when: false
+      changed_when: false
+
+    - name: Maak namespace 'argocd' aan als die nog niet bestaat
+      ansible.builtin.shell: |
+        kubectl get ns argocd --kubeconfig {{ kubeconfig_path }} || kubectl create ns argocd --kubeconfig {{ kubeconfig_path }}
+      args:
+        executable: /bin/bash
+
+    - name: Argo CD installeren via manifest
+      when: argo_check.rc != 0
+      ansible.builtin.shell: |
+        kubectl apply -n argocd -f {{ argo_cd_install_script }} --kubeconfig {{ kubeconfig_path }}
+      args:
+        executable: /bin/bash
+      register: argo_install
+      failed_when: argo_install.rc != 0
+
+    - name: Toon resultaat Argo CD installatie
+      debug:
+        var: argo_install.stdout_lines
+      when: argo_check.rc != 0
+
+    - name: Voeg Prometheus Helm repo toe (indien nog niet toegevoegd)
+      ansible.builtin.shell: |
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+        helm repo update
+      args:
+        executable: /bin/bash
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Maak namespace monitoring aan als die niet bestaat
+      ansible.builtin.shell: |
+        kubectl get ns monitoring --kubeconfig {{ kubeconfig_path }} || kubectl create ns monitoring --kubeconfig {{ kubeconfig_path }}
+      args:
+        executable: /bin/bash
+
+    - name: Installeer Prometheus via Helm in namespace monitoring
+      ansible.builtin.shell: |
+        helm upgrade --install prometheus prometheus-community/prometheus -n monitoring
+      args:
+        executable: /bin/bash
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: prometheus_install
+      failed_when: prometheus_install.rc != 0 and
+                   "'already exists' not in prometheus_install.stderr"
+
+    - name: Toon resultaat Prometheus installatie
+      debug:
+        var: prometheus_install.stdout_lines
+      when: prometheus_install is defined and prometheus_install.rc == 0
+      
+    # Controleer of runner software al geïnstalleerd is (check config.sh)
+    - name: Controleer of runner software al geïnstalleerd is
+      stat:
+        path: /opt/actions-runner/config.sh
+      register: runner_software_check
+
+    # Controleer of runner al geconfigureerd is (check .runner)
+    - name: Controleer of runner al geconfigureerd is
+      stat:
+        path: /opt/actions-runner/.runner
+      register: runner_config_check
+
+    # Maak directory aan als runner software nog niet geïnstalleerd is
+    - name: Maak directory aan voor GitHub Actions runner
+      file:
+        path: /opt/actions-runner
+        state: directory
+        mode: '0755'
+      when: not runner_software_check.stat.exists
+
+    # Download runner tarball als software nog niet geïnstalleerd is
+    - name: Download GitHub Actions runner tarball
+      get_url:
+        url: "https://github.com/actions/runner/releases/download/v2.326.0/actions-runner-linux-x64-2.326.0.tar.gz"
+        dest: /opt/actions-runner/actions-runner-linux-x64-2.326.0.tar.gz
+        mode: '0644'
+      when: not runner_software_check.stat.exists
+
+    # Pak runner uit als software nog niet geïnstalleerd is
+    - name: Pak runner uit
+      unarchive:
+        src: /opt/actions-runner/actions-runner-linux-x64-2.326.0.tar.gz
+        dest: /opt/actions-runner
+        remote_src: yes
+      when: not runner_software_check.stat.exists
+
+    # Configureer runner als nog niet geconfigureerd
+    - name: Configureer GitHub Actions runner
+      command: >
+        ./config.sh --unattended --url https://github.com/walid-riani/ansible-playbooks --token {{ github_runner_token }}
+      args:
+        chdir: /opt/actions-runner
+      when: not runner_config_check.stat.exists
+
+    # Start runner (alleen als geconfigureerd)
+    #- name: Start GitHub Actions runner
+    #  command: ./run.sh
+    #  args:
+    #    chdir: /opt/actions-runner
+    # async: 0
+    # poll: 0
+    # when: runner_config_check.stat.exists

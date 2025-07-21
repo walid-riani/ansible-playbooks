@@ -1,0 +1,86 @@
+---
+- name: Installeer, configureer en start de GitHub Actions runner
+  hosts: localhost
+  become: yes
+  vars:
+    runner_version: "2.326.0"
+    runner_download_url: >-
+      https://github.com/actions/runner/releases/download/v{{ runner_version }}/actions-runner-linux-x64-{{ runner_version }}.tar.gz
+    install_path: /opt/actions-runner
+    github_repo_url: "https://github.com/walid-riani/ansible-playbooks"  # Pas aan naar jouw repo/organisatie URL
+    #github_runner_token: "{{ github_runner_token }}"  # Definieer in host_vars of als extra var en niet hier want dit verwijst naar zichzelf en is een oneindige lus.
+
+  tasks:
+    - name: Maak installatiemap aan indien nodig
+      file:
+        path: "{{ install_path }}"
+        state: directory
+        owner: walid
+        group: walid
+        mode: '0755'
+
+    - name: Download runner pakket
+      get_url:
+        url: "{{ runner_download_url }}"
+        dest: /tmp/actions-runner.tar.gz
+        mode: '0644'
+
+    - name: Pak runner uit naar de installatiemap
+      unarchive:
+        src: /tmp/actions-runner.tar.gz
+        dest: "{{ install_path }}"
+        remote_src: yes
+        owner: walid
+        group: walid
+
+    - name: Configureer de runner
+      command: >
+        ./config.sh --unattended --url {{ github_repo_url }} --token {{ github_runner_token }}
+      args:
+        chdir: "{{ install_path }}"
+      become: no
+      register: config_result
+      failed_when: config_result.rc != 0 and
+                   "'already configured' not in (config_result.stderr + config_result.stdout)"
+
+    - name: Maak systemd service bestand aan
+      copy:
+        dest: /etc/systemd/system/github-actions-runner.service
+        content: |
+          [Unit]
+          Description=GitHub Actions Runner Service
+          After=network.target
+
+          [Service]
+          ExecStart={{ install_path }}/run.sh
+          User=walid
+          WorkingDirectory={{ install_path }}
+          Restart=always
+          RestartSec=3
+
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+
+    - name: Herlaad systemd daemon om nieuwe service te herkennen
+      systemd:
+        daemon_reload: yes
+
+    - name: Activeer en start GitHub Actions runner service
+      systemd:
+        name: github-actions-runner.service
+        enabled: yes
+        state: started
+
+    - name: Wacht 10 seconden om de service op te starten
+      pause:
+        seconds: 10
+
+    - name: Controleer de status van de runner service
+      command: systemctl is-active github-actions-runner.service
+      register: service_status
+      changed_when: false
+
+    - name: Toon de status van de runner service
+      debug:
+        msg: "GitHub Actions runner service status: {{ service_status.stdout }}"

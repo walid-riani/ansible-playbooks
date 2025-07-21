@@ -1,0 +1,10 @@
+---
+- name: Check all host vars
+  hosts: local
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Toon alle variabelen van de host
+      debug:
+        var: hostvars[inventory_hostname]

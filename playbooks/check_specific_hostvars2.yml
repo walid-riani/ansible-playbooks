@@ -1,0 +1,9 @@
+---
+- name: Toon variabelen van de lokale host
+  hosts: local
+  gather_facts: no
+
+  tasks:
+    - name: Toon begroeting met gebruiker en omgeving
+      debug:
+        msg: "Hallo {{ ansible_user }}, je zit in de {{ environment }} omgeving."

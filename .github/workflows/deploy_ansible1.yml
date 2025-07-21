@@ -1,0 +1,19 @@
+name: Ansible Deploy to Localhost
+
+on:
+  push:
+    branches:
+      - main # Pas aan als je branch anders heet
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    name: Run Ansible Playbook on Localhost
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook playbooks/install_tools.yml --inventory inventory/localhost --ask-become-pass

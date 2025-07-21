@@ -1,0 +1,13 @@
+---
+- name: Check specifieke host_vars
+  hosts: local
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Toon alleen variabele 'environment' of 'ansible_user'
+      debug:
+        msg:
+          - "environment={{ hostvars[inventory_hostname].get('environment', 'niet ingesteld')}}"
+          - "ansible_user={{ hostvars[inventory_hostname].get('ansible_user', 'niet ingesteld')}}"
+

@@ -1,0 +1,28 @@
+---
+- name: Test playbook met when, loop, template en handler
+  hosts: local
+  gather_facts: yes
+
+  tasks:
+    - name: Begroet alleen in dev omgeving
+      debug:
+        msg: "Hallo {{ ansible_user }}, je zit in de {{ environment }} omgeving."
+      when: environment == "dev"
+
+    - name: Installeer tools (gesimuleerd)
+      debug:
+        msg: "Installeer {{ item }}"
+      loop:
+        - nginx
+        - docker
+        - git
+
+    - name: Genereer info-bestand vanuit template
+      template:
+        src: ../templates/info.txt.j2
+        dest: /tmp/info.txt
+      notify: Toon resultaat
+
+  handlers:
+    - name: Toon resultaat
+      command: cat /tmp/info.txt

@@ -1,0 +1,10 @@
+---
+- hosts: local
+  gather_facts: no
+  tasks:
+    - debug:
+        var: environment
+    - debug:
+        var: ansible_user
+    - debug:
+        var: hostvars[inventory_hostname]

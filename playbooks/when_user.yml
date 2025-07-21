@@ -1,0 +1,11 @@
+---
+- name: Oefening met when-voorwaarde
+  hosts: local
+  connection: local
+  gather_facts: yes
+
+  tasks:
+    - name: Debug alleen als ansible_user walid is
+      debug:
+        msg: "Welkom Walid! Deze taak draait alleen voor jou 😎"
+      when: ansible_facts['user_id'] == "walid"

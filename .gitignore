@@ -1,5 +1,14 @@
-# Tijdelijke output
+# Tijdelijke Ansible output
 facts_output.txt
+
+# Gevoelige Ansible variabelen
+host_vars/localhost.yml
+
+# Negeer plaintext wachtwoorden of secrets
+*.txt
+*.key
+*.pem
+*.env
 
 # Retry bestanden van Ansible
 *.retry
@@ -7,9 +16,9 @@ facts_output.txt
 # Logbestanden
 *.log
 
-# Editorbestanden
-*.swp
-*.swo
+# Editor- en systeembestanden
+.DS_Store
+*.sw?
 *.bak
 
 # VS Code instellingen (optioneel)

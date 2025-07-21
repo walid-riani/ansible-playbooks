@@ -1,0 +1,20 @@
+---
+- name: Voorwaarde op basis van environment
+  hosts: local
+  connection: local
+  gather_facts: yes
+  
+  tasks: 
+    - name: Toon alle variabelen van deze host
+      debug: 
+        var: hostvars[inventory_hostname]
+
+    - name: Debug alleen in dev environment
+      debug:
+        msg: "Deze taak draait alleen in de dev omgeving!"
+      when: environment == "dev"
+
+    - name: Debug als environment iets anders is
+      debug:
+        msg: "Niet in dev omgeving, deze taak is fallback."
+      when: environment != "dev"

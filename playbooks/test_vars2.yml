@@ -1,0 +1,18 @@
+---
+- name: Toon test variabelen met when en loop
+  hosts: local
+  gather_facts: no
+
+  vars:
+    apps: ["nginx", "docker", "git"]
+
+  tasks:
+    - name: Begroet alleen in dev omgeving
+      debug:
+        msg: "Welkom {{ ansible_user }}, dit draait in de {{ environment }} omgeving."
+      when: environment == "dev"
+
+    - name: Installeer tools (gesimuleerd met loop)
+      debug:
+        msg: "Installeer {{ item }}"
+      loop: "{{ apps }}"
